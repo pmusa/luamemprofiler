@@ -1,0 +1,12 @@
+===================================================================
+Number of Mallocs=30	Total Malloc Size=1362
+Number of Reallocs=14	Total Realloc Size=224
+Number of Frees=11	Total Free Size=600
+
+Number of Allocs of Each Type:
+  String=3 | Function=2 | Usedata=0 | Thread=0 | Table=2 | Other=23
+
+Maximum Memory Used=1014 bytes
+
+We suggest you run the application again using 0.6 as parameter
+===================================================================

@@ -1,0 +1,44 @@
+*
+* Author: Pablo Musa
+* Creation Date: jun 25 2011
+* Last Modification: aug 22 2011
+* See Copyright Notice in COPYRIGHT
+* 
+* luamemprofiler - A Memory Profiler for the Lua language
+*
+
+INSTALL INSTRUCTIONS FOR LINUX:
+
+luamemprofiler has three direct dependencies:
+
+Lua 5.2
+http://www.lua.org/work/
+Download and Install (make, make install should do it).
+
+SDL 1.2
+http://www.libsdl.org/
+Ubuntu:
+sudo apt-get install libsdl1.2-dev libsdl1.2debian
+
+SDL_ttf 2.0
+http://www.libsdl.org/projects/SDL_ttf/
+Ubuntu:
+sudo apt-get install libsdl-ttf2.0-dev libsdl-ttf2.0-0
+
+luamemprofiler also depends on FreeMono.ttf font.
+
+Open the Makefile and edit the variables SDL_CFLAGS, SDL_LDFLAGS and LUA_DIR
+changing the paths to fit your computer.
+Then, open a console, go to the source folder containing the Makefile and type:
+make
+
+Then, type "lua5.2 tests/[test_name]" to execute the test.
+The output is a memory usage report in the terminal.
+Then, type "lua5.2 tests/$test_name $number" to execute the test with graphical
+mode on. The report in the first execution should indicate what number you
+should use.
+
+Finally, copy the generated file (luamemprofiler.so) to the correct Lua lib
+folder.
+example: cp luamemprofiler.so /usr/local/lib/lua/5.2/
+
