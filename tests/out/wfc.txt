@@ -1,12 +1,12 @@
 ===================================================================
-Number of Mallocs=13975	Total Malloc Size=854463
-Number of Reallocs=12	Total Realloc Size=49140
-Number of Frees=3517	Total Free Size=253536
+Number of Mallocs=13984	Total Malloc Size=1179949
+Number of Reallocs=12	Total Realloc Size=65520
+Number of Frees=3860	Total Free Size=369797
 
 Number of Allocs of Each Type:
-  String=6137 | Function=4 | Usedata=1 | Thread=0 | Table=2606 | Other=5227
+  String=6142 | Function=4 | Userdata=1 | Thread=0 | Table=2606 | Other=5231
 
-Maximum Memory Used=650067 bytes
+Maximum Memory Used=875672 bytes
 
-We suggest you run the application again using 1.7 as parameter
+We suggest you run the application again using 349.0 as parameter
 ===================================================================
