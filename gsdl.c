@@ -12,12 +12,12 @@
 
 #include <SDL.h>
 #include <SDL_ttf.h>
+#include <string.h>
 #include "graphic.h"
 
 /* GLOBAL VARIABLES */
 static TTF_Font *font;
 static SDL_Colour fontcolor = {0,0,0};
-static Uint32 color;
 static int gr_textwidth;
 static int gr_textheight;
 
@@ -26,22 +26,27 @@ static TTF_Font* loadfont(char* file, int ptsize);
 
 /* GLOBAL FUNCTIONS */
 Screen *gr_newscreen(int width,int height,const char *icon,const char *title) {
-  int depth = 32;
-  SDL_Surface *screen;
-  Uint32 vmode = SDL_HWSURFACE | SDL_ANYFORMAT | SDL_RESIZABLE |
-                                 SDL_DOUBLEBUF | SDL_HWPALETTE;
+  SDL_Window *screen;
+  SDL_Renderer *renderer;
+
+  Uint32 vmode = SDL_WINDOW_INPUT_GRABBED | SDL_WINDOW_RESIZABLE;
+                                            /*SDL_WINDOW_OPENGL;*/
   
   if (SDL_Init(SDL_INIT_VIDEO) == -1)
     return NULL;
 
-  SDL_WM_SetIcon(SDL_LoadBMP(icon), NULL);
-  screen = SDL_SetVideoMode(width, height, depth, vmode);
-  if(!screen){
+  screen = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, vmode);
+  if(!screen) {
     printf("Unable to set video mode: %s\n", SDL_GetError());
     exit(EXIT_FAILURE);
   }
+  SDL_SetWindowIcon(screen, SDL_LoadBMP(icon));
 
-  SDL_WM_SetCaption(title, 0);
+  renderer = SDL_CreateRenderer(screen, -1, 0);
+  if(!renderer) {
+    printf("Unable to set renderer: %s\n", SDL_GetError());
+    exit(EXIT_FAILURE);
+  }
 
   if (TTF_Init() == -1) {
     printf("Unable to initialize SDL_ttf(fonts): %s \n", TTF_GetError());
@@ -50,7 +55,7 @@ Screen *gr_newscreen(int width,int height,const char *icon,const char *title) {
 
   font = loadfont("FreeMono.ttf", FONT_SIZE);
 
-  return (Screen*) screen;
+  return (Screen*) renderer;
 }
 
 void gr_destroyscreen (Screen *screen) {
@@ -59,85 +64,61 @@ void gr_destroyscreen (Screen *screen) {
 }
 
 /* DRAW FUNCTIONS */
-
-/* Bresenham's line_algorithm */
 void gr_drawline (Screen *screen, int x0, int y0, int x1, int y1) {
-  int pos, dx, dy, sx, sy, err;
-  SDL_Surface *sdl_screen = (SDL_Surface*) screen;
-
-  dx = abs(x1 - x0);
-  dy = abs(y1 - y0);
-
-  if (x0 < x1) sx = 1; else sx = -1;
-  if (y0 < y1) sy = 1; else sy = -1;
-
-  err = dx-dy;
-
-  while(x0 != x1 || y0 != y1) {
-    int pos = (sdl_screen->w * y0) + x0;
-    int e2 = err + err;
-    ((Uint32 *) sdl_screen->pixels)[pos] = color;
-    if (e2 > -dy) {
-      err = err - dy;
-      x0 = x0 + sx;
-    }
-    if (e2 < dx) {
-      err = err + dx;
-      y0 = y0 + sy;
-    }
-  }
-  /* draw last pixel */
-  pos = (sdl_screen->w * y0) + x0;
-  ((Uint32 *) sdl_screen->pixels)[pos] = color;
-
-  SDL_Flip(sdl_screen);
+  SDL_Renderer *sdl_screen = (SDL_Renderer*) screen;
+  SDL_RenderDrawLine(sdl_screen, x0, y0, x1, y1);
+  SDL_RenderPresent(sdl_screen);
 }
 
 void gr_drawblock (Screen *screen, int x0 , int x1 , int y, int blockheight) {
-  SDL_Surface *sdl_screen = (SDL_Surface*) screen;
-  int i, pos = (sdl_screen->w * y) + x0;
-  int dx = x1 - x0 + 1;  /* +1 -> draw x0 AND x1 */
-  int y1 = y + blockheight;  /* draw y but not y1 */
-
-  while(y < y1) {
-    for (i = x0; i <= x1; i++, pos++) {
-      ((Uint32 *) sdl_screen->pixels)[pos] = color;
-    }
-    pos = pos + sdl_screen->w - dx;  /* go to the beginning of the next line */
-    y++;
-  }
-  SDL_Flip(screen);
+  SDL_Renderer *sdl_screen = (SDL_Renderer*) screen;
+  SDL_Rect rect;
+  rect.x = x0;
+  rect.y = y;
+  rect.w = x1 - x0 + 1;  /* +1 -> draw x0 AND x1 */
+  rect.h = blockheight;
+  SDL_RenderFillRect(sdl_screen, &rect);
+  SDL_RenderPresent(sdl_screen);
 }
 
 void gr_drawtext(Screen *screen, const char *text, int x, int y) {
-  SDL_Surface *tsurface = TTF_RenderText_Solid(font, text, fontcolor);
+  SDL_Renderer *sdl_screen = (SDL_Renderer*) screen;
+  SDL_Surface *tsurface;
+  SDL_Texture *ttexture;
   SDL_Rect rect;
   rect.x = x;
   rect.y = y;
+  rect.w = strlen(text) * gr_textwidth;
+  rect.h = gr_textheight;
 
+  tsurface = TTF_RenderText_Solid(font, text, fontcolor);
   if(!tsurface) {
-    printf("Unable to write text: %s \n", TTF_GetError());
+    printf("Unable to create text surface: %s \n", TTF_GetError());
     exit(EXIT_FAILURE);
-  } else {
-    SDL_BlitSurface(tsurface, NULL, screen, &rect);
-    SDL_Flip(screen);
-    SDL_FreeSurface(tsurface);
   }
+
+  ttexture = SDL_CreateTextureFromSurface(sdl_screen, tsurface);
+  SDL_FreeSurface(tsurface);
+  if(!ttexture) {
+    printf("Unable to create text texture: %s \n", SDL_GetError());
+    exit(EXIT_FAILURE);
+  }
+
+  SDL_RenderCopy(sdl_screen, ttexture, NULL, &rect);
+  SDL_RenderPresent(sdl_screen);
 }
 
 void gr_drawbackground(Screen *screen, Color clr) {
-  SDL_Surface *sdl_screen = (SDL_Surface*) screen;
-  color = SDL_MapRGB(sdl_screen->format, getRed(clr), getGreen(clr),
-                                                               getBlue(clr));
-  SDL_FillRect(sdl_screen, &sdl_screen->clip_rect, color);
-  SDL_Flip(sdl_screen);
+  SDL_Renderer *sdl_screen = (SDL_Renderer*) screen;
+  SDL_SetRenderDrawColor(sdl_screen, getRed(clr), getGreen(clr), getBlue(clr), SDL_ALPHA_OPAQUE);
+  SDL_RenderClear(sdl_screen);
+  SDL_RenderPresent(sdl_screen);
 }
 
 /* SET FUNCTIONS */
 void gr_setdrawcolor(Screen *screen, Color clr) {
-  SDL_Surface *sdl_screen = (SDL_Surface*) screen;
-  color = SDL_MapRGB(sdl_screen->format, getRed(clr), getGreen(clr),
-                                                               getBlue(clr));
+  SDL_Renderer *sdl_screen = (SDL_Renderer*) screen;
+  SDL_SetRenderDrawColor(sdl_screen, getRed(clr), getGreen(clr), getBlue(clr), SDL_ALPHA_OPAQUE);
 }
 
 void gr_settextcolor (Screen *screen, Color clr) {
