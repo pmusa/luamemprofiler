@@ -13,6 +13,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
+#include <stdint.h>
 
 #include "lmp.h"
 #include "vmemory.h"
@@ -88,8 +89,8 @@ static void *lmp_malloc(size_t nsize, size_t luatype) {
   st_insertblock(new);
 
   updatecounters(LMP_MALLOC, nsize, luatype);
-  if ((int) ptr > Maddress)  /* save max address to calc mem needed */
-    Maddress = (int) ptr;
+  if ((uintptr_t) ptr > Maddress)  /* save max address to calc mem needed */
+    Maddress = (uintptr_t) ptr;
 
   if (usegraphics)  /* if graphics enabled call function to handle */
     vm_newmemop(LMP_VM_MALLOC, ptr, luatype, nsize);
@@ -217,7 +218,7 @@ printf("Number of Mallocs=%ld\tTotal Malloc Size=%ld\n", nallocs, alloc_size);
 printf("Number of Reallocs=%ld\tTotal Realloc Size=%ld\n", nreallocs, realloc_size);
 printf("Number of Frees=%ld\tTotal Free Size=%ld\n", nfrees, free_size);
 printf("\nNumber of Allocs of Each Type:\n");
-printf("  String=%d | Function=%d | Usedata=%d | Thread=%d | Table=%d | Other=%d\n", ac_string, ac_function, ac_userdata, ac_thread, ac_table, ac_other);
+printf("  String=%d | Function=%d | Userdata=%d | Thread=%d | Table=%d | Other=%d\n", ac_string, ac_function, ac_userdata, ac_thread, ac_table, ac_other);
 printf("\nMaximum Memory Used=%ld bytes\n", maxmemoryuse);
 
   if (!usegraphics && nallocs > 0) {

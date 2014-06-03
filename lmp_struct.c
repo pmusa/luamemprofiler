@@ -10,16 +10,16 @@
 */
 
 
+#include <stdint.h>
 #include "lmp_struct.h"
 #include "lua.h"
-
 
 #define HASH_SIZE 23  /* empiric hash size - need more tests to confirm */
 
 
 /* simple hash function */
 static int hashfunc(void *ptr) {
-  return ((unsigned int) ptr) % HASH_SIZE;
+  return ((uintptr_t) ptr) % HASH_SIZE;
 }
 
 

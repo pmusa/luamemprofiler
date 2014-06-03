@@ -19,6 +19,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
+#include <stdint.h>
 
 #include "lmp.h"
 
@@ -108,7 +109,7 @@ static int luamemprofiler_start(lua_State *L) {
   lua_setallocf(L, lmp_alloc, ud);
 
   /* L is in most cases the lowest address of the heap (easiest to access) */
-  lmp_start((int) L, memused, usegraphics);
+  lmp_start((uintptr_t) L, memused, usegraphics);
   return 0;
 }
 

@@ -15,6 +15,7 @@
 #include <string.h>
 #include <lualib.h>
 #include <math.h>
+#include <stdint.h>
 
 
 #include "graphic.h"
@@ -28,7 +29,8 @@
 
 /* screen state */
 #define LMP_PAUSE 0
-#define LMP_CONT 1
+#define LMP_EXEC 1
+#define LMP_FINISH -1
 #define LMP_ZOOM_OUT 0
 #define LMP_ZOOM_IN 1
 
@@ -83,8 +85,8 @@ static LMP_Menuitem mi_other;
 
 /* STATIC GLOBAL VARIABLES */
 static Screen *screen;
-static int laddress;  /* first address of the program */
-static int baseaddr;  /* base address of the memory box */
+static uintptr_t laddress;  /* first address of the program */
+static uintptr_t baseaddr;  /* base address of the memory box */
 static int state = LMP_PAUSE;  /* luamemprofiler state (paused or executing) */
 static int zoom = LMP_ZOOM_OUT;  /* zoom state (in or out) */
 
@@ -136,8 +138,9 @@ void vm_start(int lowestaddress, float memused) {
 
 void vm_stop() {
   char dummy;
-  state = 0;
+  state = LMP_FINISH;
   drawreport("Execution finished. The report is in the Terminal.", LMP_FLINE);
+  drawstates();
   printf("Press Enter To Finish!");
   scanf("%c", &dummy);
 
@@ -168,7 +171,7 @@ void vm_newmemop(int memop, void *ptr, size_t luatype, size_t size) {
 
 /* uses baseaddress to calculate the memory box position of a block */
 static void calcmemdata(void *ptr, size_t size, int *reladdr, size_t *relsize) {
-  *reladdr = ((int) ptr - baseaddr) / BYTES_PER_PIXEL;
+  *reladdr = ((uintptr_t) ptr - baseaddr) / BYTES_PER_PIXEL;
   *relsize = (size / BYTES_PER_PIXEL);
   if (*relsize == 0) {
     *relsize = 1;
@@ -319,7 +322,7 @@ static void zoomin(int x, int y) {
   BLOCK_HEIGHT = BLOCK_HEIGHT * 2;        /* height 2x bigger */
   for(block = lmp_all; block != NULL; block = st_getnextall(block)) {
     /* calculates new block values in memry box (relative address and size) */
-    p = ((int) block->ptr - baseaddr) / BYTES_PER_PIXEL;
+    p = ((uintptr_t) block->ptr - baseaddr) / BYTES_PER_PIXEL;
     mb_size = (block->size / BYTES_PER_PIXEL);
     if (mb_size == 0) {
       mb_size = 1;
@@ -349,7 +352,7 @@ static void checkevent() {
   int eventtype;
   LMP_Event event;
 
-  if (state == LMP_CONT) {  /* normal execution - only accepts pause command */
+  if (state == LMP_EXEC) {  /* normal execution - only accepts pause command */
     eventtype = gr_getevent(screen, &event);  /* gets an event if exists */
     if (eventtype == LMP_EVENT_KEY && event.kevent.key == ' ') {  /* pause */
       state = LMP_PAUSE;
@@ -360,7 +363,7 @@ static void checkevent() {
     }
   }
 
-  while (state == LMP_PAUSE) {  /* execution is paused */
+  while (state != LMP_EXEC) {  /* execution is paused or finished */
     lmp_Block* (*fnextblock) (lmp_Block*) = st_getnexttype;
     lmp_Block *block = NULL;
 
@@ -368,7 +371,7 @@ static void checkevent() {
     if (eventtype == LMP_EVENT_KEY) {
       switch (event.kevent.key) {
         case ' ':  /* space key - continue - resumes normal execution */
-          state = LMP_CONT;
+          state = LMP_EXEC;
           drawstates();
           drawreport("Press 'space' to Pause execution.", LMP_FLINE);
           return;
@@ -458,8 +461,8 @@ static void writeblockinfo(void *ptr, size_t luatype, size_t size, int alloctype
       break;
   }
 
-  sprintf(textbuff, "%s | addr = %p | type = %s | size = %dB", atype, 
-                                                             ptr, ltype, size);
+  sprintf(textbuff, "%s | addr = %p | type = %s | size = %luB", atype, 
+                                      ptr, ltype, (unsigned long) size);
   drawreport(textbuff, LMP_FLINE);
   drawcallstack(LMP_FLINE + 1);
 }
@@ -602,8 +605,10 @@ static void drawstates() {
   gr_settextcolor(screen, BLACK);
   if(state == LMP_PAUSE) {
     gr_drawtext(screen, "lmp: PAUSED", x, y);
-  } else if (state == LMP_CONT) {
+  } else if (state == LMP_EXEC) {
     gr_drawtext(screen, "lmp: EXECUTING", x, y);
+  } else if (state == LMP_FINISH) {
+    gr_drawtext(screen, "lmp: FINISHED", x, y);
   }
   y = y + offset;
 
