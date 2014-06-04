@@ -21,25 +21,25 @@ LUA_LIBS = -llua5.2
 all: luamemprofiler.so
 
 luamemprofiler.so: graphic.o lmp_struct.o vmemory.o lmp.o luamemprofiler.o
-	$(CC) graphic.o lmp_struct.o vmemory.o lmp.o luamemprofiler.o -o luamemprofiler.so $(CFLAGS) $(SDL_LIBS) $(LUA_LIBS)
+	cd src && $(CC) graphic.o lmp_struct.o vmemory.o lmp.o luamemprofiler.o -o luamemprofiler.so $(CFLAGS) $(SDL_LIBS) $(LUA_LIBS) && mv luamemprofiler.so ../
 
-luamemprofiler.o: luamemprofiler.c lmp.h
-	$(CC) -c luamemprofiler.c $(CFLAGS) $(LUA_CFLAGS)
+luamemprofiler.o:
+	cd src && $(CC) -c luamemprofiler.c $(CFLAGS) $(LUA_CFLAGS)
 
-lmp.o: lmp.c lmp.h lmp_struct.h vmemory.h
-	$(CC) -c lmp.c $(CFLAGS) $(LUA_CFLAGS)
+lmp.o:
+	cd src && $(CC) -c lmp.c $(CFLAGS) $(LUA_CFLAGS)
 
-lmp_struct.o: lmp_struct.c lmp_struct.h
-	$(CC) -c lmp_struct.c $(CFLAGS) $(LUA_CFLAGS)
+lmp_struct.o:
+	cd src && $(CC) -c lmp_struct.c $(CFLAGS) $(LUA_CFLAGS)
 
-vmemory.o: vmemory.c lmp.h vmemory.h graphic.h
-	$(CC) -c vmemory.c $(CFLAGS) $(LUA_CFLAGS)
+vmemory.o:
+	cd src && $(CC) -c vmemory.c $(CFLAGS) $(LUA_CFLAGS)
 
-graphic.o: gsdl.c graphic.h
-	$(CC) -c gsdl.c -o graphic.o $(CFLAGS) $(SDL_CFLAGS)
+graphic.o:
+	cd src && $(CC) -c gsdl.c -o graphic.o $(CFLAGS) $(SDL_CFLAGS)
 
 clean:
-	rm *.o
+	rm src/*.o
 
 test:
 	./run.sh
