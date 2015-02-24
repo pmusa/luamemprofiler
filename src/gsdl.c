@@ -20,6 +20,7 @@ static TTF_Font *font;
 static SDL_Colour fontcolor = {0,0,0};
 static int gr_textwidth;
 static int gr_textheight;
+static int timer;
 
 /* STATIC FUNCTIONS */
 static TTF_Font* loadfont(char* file, int ptsize); 
@@ -53,7 +54,8 @@ Screen *gr_newscreen(int width,int height,const char *icon,const char *title) {
     exit(EXIT_FAILURE);
   }
 
-  font = loadfont("FreeMono.ttf", FONT_SIZE);
+  font = loadfont("/usr/share/fonts/truetype/freefont/FreeMono.ttf", FONT_SIZE);
+  timer = 0;
 
   return (Screen*) renderer;
 }
@@ -71,6 +73,7 @@ void gr_drawline (Screen *screen, int x0, int y0, int x1, int y1) {
 }
 
 void gr_drawblock (Screen *screen, int x0 , int x1 , int y, int blockheight) {
+  Uint32 time = SDL_GetTicks();
   SDL_Renderer *sdl_screen = (SDL_Renderer*) screen;
   SDL_Rect rect;
   rect.x = x0;
@@ -78,7 +81,9 @@ void gr_drawblock (Screen *screen, int x0 , int x1 , int y, int blockheight) {
   rect.w = x1 - x0 + 1;  /* +1 -> draw x0 AND x1 */
   rect.h = blockheight;
   SDL_RenderFillRect(sdl_screen, &rect);
-  SDL_RenderPresent(sdl_screen);
+  if (time - timer > 60) {
+    SDL_RenderPresent(sdl_screen);
+  }
 }
 
 void gr_drawtext(Screen *screen, const char *text, int x, int y) {

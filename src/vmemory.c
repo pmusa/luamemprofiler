@@ -133,16 +133,23 @@ void vm_start(int lowestaddress, float memused) {
   drawrtcolumn(memused);
   drawbtrow();
 
+  /* benchmark option to start executing */
+  state = LMP_EXEC;
+
   checkevent();
 }
 
 void vm_stop() {
+  /* comment to make benchmark tests
   char dummy;
+  */
   state = LMP_FINISH;
   drawreport("Execution finished. The report is in the Terminal.", LMP_FLINE);
   drawstates();
   printf("Press Enter To Finish!");
+  /* comment to make benchmark tests
   scanf("%c", &dummy);
+  */
 
   gr_destroyscreen(screen);
 }
