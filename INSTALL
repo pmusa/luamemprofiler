@@ -20,7 +20,7 @@ sudo apt-get install liblua5.2-dev
 SDL 1.2
 http://www.libsdl.org/
 Ubuntu:
-sudo apt-get install libsdl1.2-dev libsdl1.2debian
+sudo apt-get install libsdl2-dev
 
 SDL_ttf 2.0
 http://www.libsdl.org/projects/SDL_ttf/

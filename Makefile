@@ -1,11 +1,12 @@
 #
 # Author: Pablo Musa
 # Creation Date: mar 27 2011
-# Last Modification: jun 03 2014
+# Last Modification: feb 22 2015
 # See Copyright Notice in COPYRIGHT
 # 
 # luamemprofiler - A Memory Profiler for the Lua language
 #
+LUA_VERSION=5.3
 
 CC = gcc
 CFLAGS = -g -Wall -ansi -pedantic -fPIC -shared
@@ -14,29 +15,33 @@ CFLAGS = -g -Wall -ansi -pedantic -fPIC -shared
 SDL_LIBS = -L/home/pmusa/Programs/SDL/lib -Wl,-rpath,/home/pmusa/Programs/SDL/lib -lSDL2 -lSDL2_ttf -lpthread
 SDL_CFLAGS = -I/home/pmusa/Programs/SDL/include/SDL2 -D_REENTRANT
 
-LUA_DIR = /usr/include/lua5.2
+#LUA_DIR = /usr/include/lua${LUA_VERSION}
+LUA_DIR = /home/pmusa/Downloads/lua-${LUA_VERSION}.0/src
 LUA_CFLAGS = -I$(LUA_DIR)
-LUA_LIBS = -llua5.2
+LUA_LIBS = -llua${LUA_VERSION}
 
-all: luamemprofiler.so
+all: bin/luamemprofiler.so
 
-luamemprofiler.so: graphic.o lmp_struct.o vmemory.o lmp.o luamemprofiler.o
-	cd src && $(CC) graphic.o lmp_struct.o vmemory.o lmp.o luamemprofiler.o -o luamemprofiler.so $(CFLAGS) $(SDL_LIBS) $(LUA_LIBS) && mv luamemprofiler.so ../
+install: bin/luamemprofiler.so
+	cp bin/luamemprofiler.so /usr/local/lib/lua/${LUA_VERSION}/
 
-luamemprofiler.o:
+bin/luamemprofiler.so: src/graphic.o src/lmp_struct.o src/vmemory.o src/lmp.o src/luamemprofiler.o
+	cd src && $(CC) graphic.o lmp_struct.o vmemory.o lmp.o luamemprofiler.o -o luamemprofiler.so $(CFLAGS) $(SDL_LIBS) $(LUA_LIBS) && mv luamemprofiler.so ../bin/
+
+src/luamemprofiler.o: src/luamemprofiler.c src/lmp.h
 	cd src && $(CC) -c luamemprofiler.c $(CFLAGS) $(LUA_CFLAGS)
 
-lmp.o:
+src/lmp.o: src/lmp.c src/lmp.h src/vmemory.h src/lmp_struct.c src/lmp_struct.h
 	cd src && $(CC) -c lmp.c $(CFLAGS) $(LUA_CFLAGS)
 
-lmp_struct.o:
-	cd src && $(CC) -c lmp_struct.c $(CFLAGS) $(LUA_CFLAGS)
-
-vmemory.o:
+src/vmemory.o: src/vmemory.c src/vmemory.h src/graphic.h src/lmp_struct.c src/lmp_struct.h
 	cd src && $(CC) -c vmemory.c $(CFLAGS) $(LUA_CFLAGS)
 
-graphic.o:
+src/graphic.o: src/gsdl.c src/graphic.h
 	cd src && $(CC) -c gsdl.c -o graphic.o $(CFLAGS) $(SDL_CFLAGS)
+
+src/lmp_struct.o: src/lmp_struct.c src/lmp_struct.h
+	cd src && $(CC) -c lmp_struct.c $(CFLAGS) $(LUA_CFLAGS)
 
 clean:
 	rm src/*.o
