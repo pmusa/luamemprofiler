@@ -83,6 +83,7 @@ void gr_drawblock (Screen *screen, int x0 , int x1 , int y, int blockheight) {
   SDL_RenderFillRect(sdl_screen, &rect);
   if (time - timer > 60) {
     SDL_RenderPresent(sdl_screen);
+    timer = time;
   }
 }
 
