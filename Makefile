@@ -26,7 +26,7 @@ install: bin/luamemprofiler.so
 	cp bin/luamemprofiler.so /usr/local/lib/lua/${LUA_VERSION}/
 
 bin/luamemprofiler.so: src/graphic.o src/lmp_struct.o src/vmemory.o src/lmp.o src/luamemprofiler.o
-	cd src && $(CC) graphic.o lmp_struct.o vmemory.o lmp.o luamemprofiler.o -o luamemprofiler.so $(CFLAGS) $(SDL_LIBS) $(LUA_LIBS) && mv luamemprofiler.so ../bin/
+	cd src && $(CC) graphic.o lmp_struct.o vmemory.o lmp.o luamemprofiler.o -o luamemprofiler.so $(CFLAGS) $(SDL_LIBS) $(LUA_LIBS) && mkdir -p ../bin && mv luamemprofiler.so ../bin/
 
 src/luamemprofiler.o: src/luamemprofiler.c src/lmp.h
 	cd src && $(CC) -c luamemprofiler.c $(CFLAGS) $(LUA_CFLAGS)
