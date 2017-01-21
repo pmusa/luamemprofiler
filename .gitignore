@@ -19,3 +19,6 @@ todo.txt
 *.exe
 *.out
 *.app
+
+# vim
+*.swp

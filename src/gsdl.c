@@ -21,13 +21,13 @@ static SDL_Colour fontcolor = {0,0,0};
 static int gr_textwidth;
 static int gr_textheight;
 static int timer;
+static SDL_Window *window;
 
 /* STATIC FUNCTIONS */
 static TTF_Font* loadfont(char* file, int ptsize); 
 
 /* GLOBAL FUNCTIONS */
 Screen *gr_newscreen(int width,int height,const char *icon,const char *title) {
-  SDL_Window *screen;
   SDL_Renderer *renderer;
 
   Uint32 vmode = SDL_WINDOW_INPUT_GRABBED | SDL_WINDOW_RESIZABLE;
@@ -36,14 +36,14 @@ Screen *gr_newscreen(int width,int height,const char *icon,const char *title) {
   if (SDL_Init(SDL_INIT_VIDEO) == -1)
     return NULL;
 
-  screen = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, vmode);
-  if(!screen) {
+  window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, vmode);
+  if(!window) {
     printf("Unable to set video mode: %s\n", SDL_GetError());
     exit(EXIT_FAILURE);
   }
-  SDL_SetWindowIcon(screen, SDL_LoadBMP(icon));
+  SDL_SetWindowIcon(window, SDL_LoadBMP(icon));
 
-  renderer = SDL_CreateRenderer(screen, -1, 0);
+  renderer = SDL_CreateRenderer(window, -1, 0);
   if(!renderer) {
     printf("Unable to set renderer: %s\n", SDL_GetError());
     exit(EXIT_FAILURE);
@@ -61,7 +61,10 @@ Screen *gr_newscreen(int width,int height,const char *icon,const char *title) {
 }
 
 void gr_destroyscreen (Screen *screen) {
+  TTF_CloseFont(font);
   TTF_Quit();
+  SDL_DestroyRenderer(screen);
+  SDL_DestroyWindow(window);
   SDL_Quit();
 }
 

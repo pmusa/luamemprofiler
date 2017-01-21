@@ -23,6 +23,8 @@
 
 #include "lmp.h"
 
+#define LMP_DEFAULT_OUTPUT_FILENAME  "lmp_default_output.txt"
+
 /* Keeps the default allocation function and the ud of a lua_State */
 typedef struct lmp_allocstructure {
   lua_Alloc f;
@@ -44,9 +46,9 @@ static int finalize (lua_State *L) {
 
   /* get lmp_Alloc and restore original allocation function */
   s = (lmp_Alloc *) lua_touserdata(L, -1);
-  if (s->f != lua_getallocf (L, NULL)) {
+  if (s->f != lua_getallocf (L, NULL)) {  /* stop was not called */
     lua_setallocf(L, s->f, s->ud);
-    lmp_stop();
+    lmp_stop(LMP_DEFAULT_OUTPUT_FILENAME);
   }
 
   return 0;
@@ -114,8 +116,19 @@ static int luamemprofiler_start(lua_State *L) {
 }
 
 /* restore default allocation function and stop the other modules */
-static int luamemprofiler_stop(lua_State *L) {
+static int luamemprofiler_stop (lua_State *L) {
   lmp_Alloc *s;
+  const char *str;
+
+  /* check if there is an output_filename and update previous value */
+  if (lua_gettop(L)) {
+    str = luaL_checkstring(L, 1);
+  } else {
+    str = LMP_DEFAULT_OUTPUT_FILENAME;
+  }
+
+  lua_gc(L, LUA_GCCOLLECT, 1);
+  lua_gc(L, LUA_GCCOLLECT, 1);
 
   /* get 'alloc' userdata and restore original allocation function */
   lua_pushstring(L, "luamemprofiler_ud");
@@ -128,7 +141,7 @@ static int luamemprofiler_stop(lua_State *L) {
   lua_pop(L, 1);
   lua_setallocf(L, s->f, s->ud);
 
-  lmp_stop();
+  lmp_stop(str);
   return 0;
 }
 
@@ -148,4 +161,8 @@ static const luaL_Reg luamemprofiler[] = {
 LUALIB_API int luaopen_luamemprofiler (lua_State *L) {
   luaL_newlib(L, luamemprofiler);
   return 1;
+}
+
+LUALIB_API int luaopen_luamemprofilerD (lua_State *L) {
+  return luaopen_luamemprofiler(L);
 }

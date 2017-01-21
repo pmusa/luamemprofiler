@@ -9,14 +9,15 @@
 LUA_VERSION=5.3
 
 CC = gcc
-CFLAGS = -g -Wall -ansi -pedantic -fPIC -shared
+#CFLAGS = -g -O0 -Wall -ansi -pedantic -fPIC -shared
+CFLAGS = -O2 -Wall -ansi -pedantic -fPIC -shared
 
 # used the 'sdl2-config' output + the '-lSDL2_ttf'
 SDL_LIBS = -L/home/pmusa/Programs/SDL/lib -Wl,-rpath,/home/pmusa/Programs/SDL/lib -lSDL2 -lSDL2_ttf -lpthread
 SDL_CFLAGS = -I/home/pmusa/Programs/SDL/include/SDL2 -D_REENTRANT
 
 #LUA_DIR = /usr/include/lua${LUA_VERSION}
-LUA_DIR = /home/pmusa/Downloads/lua-${LUA_VERSION}.0/src
+LUA_DIR = /home/pmusa/Coding/lua/lua-${LUA_VERSION}.0/src
 LUA_CFLAGS = -I$(LUA_DIR)
 LUA_LIBS = -llua${LUA_VERSION}
 

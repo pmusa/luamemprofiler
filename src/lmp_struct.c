@@ -14,7 +14,8 @@
 #include "lmp_struct.h"
 #include "lua.h"
 
-#define HASH_SIZE 23  /* empiric hash size - need more tests to confirm */
+/* Hash size based on benchmark. Options: 131071, 10093, 997, 23 */
+#define HASH_SIZE 10093 
 
 
 /* simple hash function */
@@ -74,7 +75,7 @@ void st_destroyhash() {
 }
 
 lmp_Block *st_removeblock (void *ptr) {
-  lmp_Block *p, *ant = NULL;
+  lmp_Block **type, *p, *ant = NULL;
   int i = hashfunc(ptr);
   for (p = lmp_head[i]; p != NULL; ant = p, p = p->next) {
     if (p->ptr == ptr) {
@@ -86,6 +87,30 @@ lmp_Block *st_removeblock (void *ptr) {
       p->next = NULL;
 
       if (usegraphics) {
+        switch (p->luatype) {
+          case LUA_TSTRING:
+            type = &lmp_string;
+            break;
+          case LUA_TFUNCTION:
+            type = &lmp_function;
+            break;
+          case LUA_TUSERDATA:
+            type = &lmp_userdata;
+            break;
+          case LUA_TTHREAD:
+            type = &lmp_thread;
+            break;
+          case LUA_TTABLE:
+            type = &lmp_table;
+            break;
+          default:  /* OTHER */
+            type = &lmp_other;
+            break;
+        }
+        if (*type == p) {
+          *type = p->next;
+        }
+
         if (p->prevtype != NULL) {
           p->prevtype->nexttype = p->nexttype;
         }
@@ -99,6 +124,15 @@ lmp_Block *st_removeblock (void *ptr) {
         if (p->nextall != NULL) {
           p->nextall->prevall = p->prevall;
         }
+
+        p->prevtype = NULL;
+        p->nexttype = NULL;
+        p->prevall = NULL;
+        p->nextall = NULL;
+      }
+
+      if (lmp_all == p) {
+        lmp_all = p->next;
       }
 
       return p;

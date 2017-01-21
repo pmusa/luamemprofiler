@@ -32,8 +32,8 @@ static long nallocs, alloc_size;
 static long nreallocs, realloc_size;
 static long nfrees, free_size;
 static long memoryuse, maxmemoryuse;
-static int Laddress;
-static int Maddress = 0;
+static long Laddress;
+static long Maddress = 0;
 static int usegraphics;
 
 /* STATIC FUNCTIONS */
@@ -54,8 +54,8 @@ void lmp_start(int lowestaddress, float memused, int usegraphic) {
     vm_start(lowestaddress, memused);
 }
 
-void lmp_stop() {
-  generatereport();
+void lmp_stop(const char *filename) {
+  generatereport(filename);
 
   /* erase counters and blocks */
   initcounters();
@@ -90,7 +90,11 @@ static void *lmp_malloc(size_t nsize, size_t luatype) {
 
   updatecounters(LMP_MALLOC, nsize, luatype);
   if ((uintptr_t) ptr > Maddress)  /* save max address to calc mem needed */
-    Maddress = (uintptr_t) ptr;
+    Maddress = (uintptr_t) ptr + nsize;
+  if ((uintptr_t) ptr < Laddress)  /* save min address to calc mem needed */
+    Laddress = (uintptr_t) ptr;
+
+/*printf("%ld - %ld - %p - %ld - %ld\n", Maddress, Laddress, ptr, nsize, luatype);*/
 
   if (usegraphics)  /* if graphics enabled call function to handle */
     vm_newmemop(LMP_VM_MALLOC, ptr, luatype, nsize);
@@ -129,12 +133,12 @@ static void *lmp_realloc(void *ptr, size_t nsize) {
 
   block = st_removeblock(ptr);  /* realloc usually changes memory address */
   if (block != NULL) {
+    int luatype = st_getluatype(block);
     osize = st_getsize(block);
     st_setsize(block, nsize);
     st_setptr(block, p);
     st_insertblock(block);
     if (usegraphics) {
-      int luatype = st_getluatype(block);
       if (ptr != p) {  /* memory location changed */
         vm_newmemop(LMP_VM_REALLOC, ptr, LUA_TFREE, osize); /*erase old block*/
         vm_newmemop(LMP_VM_REALLOC, p, luatype, nsize);
@@ -147,6 +151,13 @@ static void *lmp_realloc(void *ptr, size_t nsize) {
       }
     }
     updatecounters(LMP_REALLOC, nsize - osize, 0);
+    if ((uintptr_t) p + nsize > Maddress)
+      Maddress = (uintptr_t) p + nsize;
+    if ((uintptr_t) p < Laddress)
+      Laddress = (uintptr_t) p;
+
+/* printf("%ld - %ld - %p - %ld - %d\n", Maddress, Laddress, ptr, nsize, luatype); */
+
   }
   return p;
 }
@@ -197,6 +208,10 @@ static void updatecounters (int alloctype, size_t size, size_t luatype) {
         ac_table++;
         break;
       default:
+        /* 
+         * the above options are the only existing ones, everything
+         * else is OTHER
+         */
         ac_other++;
     }
   }
@@ -207,23 +222,24 @@ static void updatecounters (int alloctype, size_t size, size_t luatype) {
 ** program memory usage and sugest memory consumption parameter for future
 ** execution.
  */
-static void generatereport() {
-  float mem = ((float) (Maddress - Laddress) / 1000000) + 0.1;
+static void generatereport(const char *filename) {
+  /* add empiric size of graphic mem usage */
+  float mem = ((float) (Maddress - Laddress) / 1000000) + 0.5;
 
-  if (!usegraphics)
-    mem = mem + 0.4;  /* empiric size of graphic mem usage */
-
-printf("===================================================================\n");
-printf("Number of Mallocs=%ld\tTotal Malloc Size=%ld\n", nallocs, alloc_size);
-printf("Number of Reallocs=%ld\tTotal Realloc Size=%ld\n", nreallocs, realloc_size);
-printf("Number of Frees=%ld\tTotal Free Size=%ld\n", nfrees, free_size);
-printf("\nNumber of Allocs of Each Type:\n");
-printf("  String=%d | Function=%d | Userdata=%d | Thread=%d | Table=%d | Other=%d\n", ac_string, ac_function, ac_userdata, ac_thread, ac_table, ac_other);
-printf("\nMaximum Memory Used=%ld bytes\n", maxmemoryuse);
-
-  if (!usegraphics && nallocs > 0) {
-printf("\nWe suggest you run the application again using %.1f as parameter\n", mem); 
+  FILE *f = fopen(filename, "w");
+  if (f == NULL) {
+    printf("error: could open file: '%s'.", filename);
+    exit(1);
   }
-printf("===================================================================\n");
+
+  fprintf(f, "===================================================================\n");
+  fprintf(f, "Number of Mallocs=%ld\tTotal Malloc Size=%ld\n", nallocs, alloc_size);
+  fprintf(f, "Number of Reallocs=%ld\tTotal Realloc Size=%ld\n", nreallocs, realloc_size);
+  fprintf(f, "Number of Frees=%ld\tTotal Free Size=%ld\n", nfrees, free_size);
+  fprintf(f, "\nNumber of Allocs of Each Type:\n");
+  fprintf(f, "  String=%d | Function=%d | Userdata=%d | Thread=%d | Table=%d | Other=%d\n", ac_string, ac_function, ac_userdata, ac_thread, ac_table, ac_other);
+  fprintf(f, "\nMaximum Memory Used=%ld bytes\n", maxmemoryuse);
+  fprintf(f, "\nWe suggest you run the application again using %.1f as parameter\n", mem); 
+  fprintf(f, "===================================================================\n");
 }
 

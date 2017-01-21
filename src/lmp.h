@@ -26,7 +26,7 @@ void lmp_start (int lowestaddress, float memused, int usegraphics);
 ** module (vm_stop) [if started] and generates the report (number of: mallocs,
 ** frees, tables, ...).
 */
-void lmp_stop ();
+void lmp_stop (const char *filename);
 
 /*
 ** Checks the alloc type (malloc, free, realloc) and update data in
